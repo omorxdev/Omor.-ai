@@ -1,0 +1,55 @@
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          mkdir extracted
+          unzip -q "developer-omor-ai-v3 (1).zip" -d extracted
+          test -f extracted/developer_omor_ai/pubspec.yaml
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate Android project
+        working-directory: extracted/developer_omor_ai
+        run: flutter create --platforms=android --org com.omor.developer_omor_ai .
+
+      - name: Patch manifest
+        working-directory: extracted/developer_omor_ai
+        run: python3 scripts/patch_manifest.py
+
+      - name: Install dependencies
+        working-directory: extracted/developer_omor_ai
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: extracted/developer_omor_ai
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: developer-omor-ai-release-apk
+          path: extracted/developer_omor_ai/build/app/outputs/flutter-apk/app-release.apk
