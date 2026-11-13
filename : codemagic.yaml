@@ -1,0 +1,20 @@
+
+workflows:
+  android-apk:
+    name: Omor AI Android APK
+    max_build_duration: 120
+    environment:
+      flutter: stable
+      java: 21
+    scripts:
+      - name: Extract and build APK
+        script: |
+          mkdir -p extracted
+          unzip -q "developer-omor-ai-v3 (1).zip" -d extracted
+          cd extracted/developer_omor_ai
+          flutter create --platforms=android --org com.omor.developer_omor_ai .
+          python3 scripts/patch_manifest.py
+          flutter pub get
+          flutter build apk --release
+    artifacts:
+      - extracted/developer_omor_ai/build/app/outputs/flutter-apk/*.apk
